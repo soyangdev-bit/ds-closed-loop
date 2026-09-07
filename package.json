@@ -1,0 +1,56 @@
+{
+  "name": "ds-closed-loop",
+  "version": "1.0.0",
+  "description": "Magic Patterns → Devin Angular fidelity harness (Gate A/B, capture-preview, fail-only retries)",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "bin": {
+    "ds-loop": "dist/cli.js",
+    "capture-preview": "dist/capture-preview-bin.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "prepare": "tsc",
+    "ds-loop": "tsx src/cli.ts",
+    "capture-preview": "tsx src/cli.ts capture-preview",
+    "fixtures:png": "tsx src/fixture-png.ts",
+    "sample:gate-a-fail": "tsx src/cli.ts gate-a --inventory fixtures/bad/inventory.json --source fixtures/bad/src",
+    "sample:good": "tsx src/cli.ts run --inventory fixtures/good/inventory.json --source fixtures/good/src --preview fixtures/good/preview.html --retries 0",
+    "sample:drift": "tsx src/cli.ts run --inventory fixtures/drift/inventory.json --source fixtures/drift/src --preview fixtures/drift/preview.html --retries 0",
+    "samples": "tsx src/run-samples.ts",
+    "test": "tsx --test test/**/*.test.ts"
+  },
+  "keywords": [
+    "design-system",
+    "angular",
+    "magic-patterns",
+    "playwright",
+    "devin"
+  ],
+  "license": "MIT",
+  "files": [
+    "dist",
+    "schemas",
+    "skills",
+    "fixtures",
+    "README.md"
+  ],
+  "dependencies": {
+    "ajv": "^8.17.1",
+    "commander": "^13.1.0",
+    "playwright": "1.63.0",
+    "pngjs": "^7.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.15.3",
+    "@types/pngjs": "^6.0.5",
+    "tsx": "^4.19.4",
+    "typescript": "^5.8.3"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/soyangdev-bit/ds-closed-loop.git"
+  }
+}

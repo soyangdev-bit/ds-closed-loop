@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.ds-loop/
+*.log
+.playwright/
+test-results/
+playwright-report/
+.idea/
+.DS_Store
+*.png.meta.json

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>checkout-summary (drift)</title>
+    <style>
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        width: 1440px;
+        height: 900px;
+        overflow: hidden;
+        background: #f6f8fa;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      [data-region="header"] {
+        position: absolute;
+        top: 40px;
+        left: 0;
+        width: 1440px;
+        height: 80px;
+        background: #ffffff;
+        border-bottom: 8px solid #1a73e8;
+      }
+      [data-region="cta-row"] {
+        position: absolute;
+        top: 840px;
+        left: 0;
+        width: 1440px;
+        height: 100px;
+        background: #ffffff;
+      }
+      ds-button {
+        display: block;
+        position: absolute;
+        top: 20px;
+        left: 24px;
+        width: 160px;
+        height: 48px;
+        background: #1a73e8;
+        border-radius: 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <header data-region="header"></header>
+    <div data-region="cta-row">
+      <ds-button variant="primary" size="md"></ds-button>
+    </div>
+  </body>
+</html>
