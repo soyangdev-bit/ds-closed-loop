@@ -1,0 +1,22 @@
+:host {
+  display: block;
+}
+
+.header {
+  background: var(--color-surface);
+  padding: var(--space-200);
+  border-radius: var(--radius-md);
+}
+
+.summary {
+  padding: var(--space-200);
+}
+
+.cta-row {
+  padding: var(--space-200);
+}
+
+ds-button {
+  background: var(--color-action-primary);
+  border-radius: var(--radius-md);
+}
