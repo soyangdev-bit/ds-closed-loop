@@ -2,9 +2,11 @@
 
 Magic Patterns → Devin Angular fidelity harness.
 
-Freeze a published Magic Patterns screen (PNG + inventory JSON + React), generate Angular against the design system, then iterate **only** on Gate A/B checklist failures. Retry cap is 3. The kill metric is the percent of screens that pass **both** gates in ≤3 retries.
+Freeze a published Magic Patterns screen (PNG + inventory JSON + React), generate Angular against **UDX**, then iterate **only** on Gate A/B checklist failures. Retry cap is 3. The kill metric is the percent of screens that pass **both** gates in ≤3 retries.
 
 This is not a pixel-perfect whole-image matcher. Gate B measures **region drift** against `layoutChecks.maxDriftPx` (default **8px**).
+
+Magic Patterns never fills Angular selectors. Each inventory row maps **React → UDX**. A partial UDX dump (`components.json` or CSV) is what enables Gate A; without it, rows stay `todo` and Devin guesses.
 
 ## Install
 
@@ -20,7 +22,7 @@ CLI entry points (after `npm install` / `npm run build`):
 | Command | Purpose |
 | --- | --- |
 | `npx ds-loop preflight` | Validate inventory JSON + reference PNG |
-| `npx ds-loop gate-a` | Structural DS checks |
+| `npx ds-loop gate-a` | Structural UDX checks |
 | `npx ds-loop gate-b` | Playwright region-drift checks |
 | `npx ds-loop run` | Preflight → A → B, fail-only `next-prompt.md`, optional retry loop |
 | `npx capture-preview` | One-shot screenshot of a **locked published** preview URL |
@@ -44,7 +46,7 @@ Mark regions in the Angular preview so Gate B can measure them:
 
 ```html
 <header data-region="header">...</header>
-<div data-region="cta-row"><ds-button variant="primary" size="md">Pay</ds-button></div>
+<div data-region="cta-row"><udx-button variant="primary" size="md">Pay</udx-button></div>
 ```
 
 Mask clocks, avatars, and other volatile pixels with `data-dynamic`, `data-ds-mask`, or `data-mask`. `capture-preview` and Gate B paint those nodes out the same way.
@@ -53,14 +55,16 @@ Mask clocks, avatars, and other volatile pixels with `data-dynamic`, `data-ds-ma
 
 ```json
 {
+  "designSystem": "udx",
   "screenId": "checkout-summary",
   "referencePng": "refs/checkout-summary.png",
   "frameSize": { "w": 1440, "h": 900 },
   "components": [{
     "id": "btn-pay",
     "react": { "name": "Button", "variant": "primary", "size": "md" },
-    "angular": { "selector": "ds-button", "inputs": { "variant": "primary", "size": "md" } },
+    "angular": { "selector": "udx-button", "inputs": { "variant": "primary", "size": "md" } },
     "required": true,
+    "todo": true,
     "tokens": ["color.action.primary", "space.200", "radius.md"]
   }],
   "forbidden": ["raw-button", "inline-hex", "inline-px-spacing"],
@@ -74,7 +78,49 @@ Mask clocks, avatars, and other volatile pixels with `data-dynamic`, `data-ds-ma
 
 JSON Schema: [`schemas/inventory.schema.json`](schemas/inventory.schema.json).
 
-Do not rename these keys. Extra keys are allowed; required keys are not optional.
+Do not rename these keys. Extra keys are allowed; required keys are not optional. `designSystem` is always `"udx"`.
+
+`todo: true` means `angular.selector` is a guessed `udx-*` placeholder, not a row from the UDX catalog. Sample fixtures are placeholders until a real dump lands. Gate A still scores `required` rows against whatever selector is in the inventory.
+
+### React → UDX (Magic Patterns never fills Angular)
+
+| Source | Fills |
+| --- | --- |
+| Magic Patterns export | `react.name` / variant / size, plus the React `.tsx` |
+| UDX dump (`components.json` or CSV) | `angular.selector`, `angular.inputs`, optional `tokens` |
+| Neither (row not in the dump) | leave `"todo": true`; Devin guesses |
+
+A **partial** UDX list is enough to enable Gate A for the rows it covers. Unmapped rows stay `todo`.
+
+### UDX dump format
+
+One row per component: **selector**, **inputs/variants**, optional **tokens**. JSON or CSV.
+
+[`schemas/udx-catalog.schema.json`](schemas/udx-catalog.schema.json) · examples: [`fixtures/udx-catalog.example.json`](fixtures/udx-catalog.example.json), [`fixtures/udx-catalog.example.csv`](fixtures/udx-catalog.example.csv).
+
+```json
+{
+  "designSystem": "udx",
+  "components": [
+    {
+      "selector": "udx-button",
+      "react": "Button",
+      "inputs": {
+        "variant": ["primary", "secondary", "ghost"],
+        "size": ["sm", "md", "lg"]
+      },
+      "tokens": ["color.action.primary", "space.200", "radius.md"]
+    }
+  ]
+}
+```
+
+```csv
+selector,react,inputs,variants,tokens
+udx-button,Button,"variant,size","variant=primary|secondary|ghost;size=sm|md|lg","color.action.primary,space.200,radius.md"
+```
+
+Match `react.name` (and variant/size) to a dump row, copy selector + inputs into the inventory, and clear `todo`. Gate A/B scoring rules are otherwise unchanged.
 
 ## Gates
 
@@ -159,7 +205,7 @@ Live MCP mid-loop moves the target while Devin is scored against the old PNG.
 Agent skills (check these in on `main`):
 
 1. [`skills/ds-closed-loop-setup/SKILL.md`](skills/ds-closed-loop-setup/SKILL.md) — clone, `npm install`, Playwright, drop `refs/`, wire `--generate-cmd`.
-2. [`skills/ds-refs-export/SKILL.md`](skills/ds-refs-export/SKILL.md) — lock MP frame, capture PNG, fill inventory, export React.
+2. [`skills/ds-refs-export/SKILL.md`](skills/ds-refs-export/SKILL.md) — lock MP frame, capture PNG, map React → UDX, export React.
 
 Point Devin at those skills plus the drop path. After each implementation pass, run `ds-loop run`. Feed `.ds-loop/next-prompt.md` back as the next instruction.
 
@@ -195,8 +241,10 @@ Under `fixtures/`:
 | Fixture | What it demonstrates | npm script |
 | --- | --- | --- |
 | `fixtures/bad` | Gate A fail (`wrong-component`, `missing-variant`, `token-drift`) | `npm run sample:gate-a-fail` (exits 1) |
-| `fixtures/good` | Good Angular DS usage; A+B pass | `npm run sample:good` (exits 0) |
+| `fixtures/good` | Good Angular UDX usage; A+B pass | `npm run sample:good` (exits 0) |
 | `fixtures/drift` | Structure OK, header/CTA shifted >8px; Gate B fail | `npm run sample:drift` (exits 1) |
+
+`udx-button` in these drops is a **placeholder** (`"todo": true`) until a real UDX catalog is dropped. See [`fixtures/README.md`](fixtures/README.md).
 
 ```bash
 npm install

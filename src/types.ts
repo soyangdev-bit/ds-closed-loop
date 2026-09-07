@@ -37,6 +37,7 @@ export interface ReactMapping {
 }
 
 export interface AngularMapping {
+  /** UDX selector (e.g. udx-button). Never filled by Magic Patterns. */
   selector: string;
   inputs: Record<string, string | number | boolean>;
 }
@@ -47,6 +48,8 @@ export interface InventoryComponent {
   angular: AngularMapping;
   required: boolean;
   tokens: string[];
+  /** Placeholder UDX mapping (no catalog row yet). Gate A still checks `required` selectors. */
+  todo?: boolean;
 }
 
 export interface LayoutCheck {
@@ -55,6 +58,7 @@ export interface LayoutCheck {
 }
 
 export interface Inventory {
+  designSystem: "udx";
   screenId: string;
   referencePng: string;
   frameSize: FrameSize;

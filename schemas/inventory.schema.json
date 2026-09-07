@@ -2,9 +2,11 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://github.com/soyangdev-bit/ds-closed-loop/schemas/inventory.schema.json",
   "title": "DS closed-loop inventory",
+  "description": "Frozen screen drop. Each components[] row maps a Magic Patterns React component to a UDX Angular selector. Magic Patterns never fills angular.*; those fields come from a UDX catalog dump (CSV or components.json) or stay todo placeholders.",
   "type": "object",
   "additionalProperties": true,
   "required": [
+    "designSystem",
     "screenId",
     "referencePng",
     "frameSize",
@@ -14,6 +16,11 @@
     "rubric"
   ],
   "properties": {
+    "designSystem": {
+      "type": "string",
+      "const": "udx",
+      "description": "Target Angular design system. Always \"udx\"."
+    },
     "screenId": { "type": "string", "minLength": 1 },
     "referencePng": { "type": "string", "minLength": 1 },
     "frameSize": {
@@ -47,8 +54,13 @@
             "type": "object",
             "additionalProperties": true,
             "required": ["selector", "inputs"],
+            "description": "UDX mapping. Filled from the UDX dump (selector + inputs/variants), never from Magic Patterns. Placeholder selectors use the udx-* prefix and the row's todo flag.",
             "properties": {
-              "selector": { "type": "string", "minLength": 1 },
+              "selector": {
+                "type": "string",
+                "minLength": 1,
+                "description": "UDX Angular selector (e.g. udx-button). Placeholder until a catalog row maps this React component."
+              },
               "inputs": {
                 "type": "object",
                 "additionalProperties": { "type": ["string", "number", "boolean"] }
@@ -56,6 +68,10 @@
             }
           },
           "required": { "type": "boolean" },
+          "todo": {
+            "type": "boolean",
+            "description": "True when angular.selector is a guessed udx-* placeholder, not a row from the UDX catalog dump. Gate A still scores required rows against that selector."
+          },
           "tokens": {
             "type": "array",
             "items": { "type": "string" }

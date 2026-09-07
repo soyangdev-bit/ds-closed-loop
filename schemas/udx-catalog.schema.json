@@ -1,0 +1,66 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/soyangdev-bit/ds-closed-loop/schemas/udx-catalog.schema.json",
+  "title": "UDX catalog dump",
+  "description": "Expected UDX dump format (components.json). One row per component: selector, inputs/variants, optional tokens. A matching CSV is equivalent. Magic Patterns does not produce this file. A partial dump is enough to fill inventory.angular for mapped rows (Gate A). Unmapped inventory rows stay todo; Devin guesses.",
+  "type": "object",
+  "additionalProperties": true,
+  "required": ["designSystem", "components"],
+  "properties": {
+    "designSystem": {
+      "type": "string",
+      "const": "udx"
+    },
+    "components": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": ["selector"],
+        "properties": {
+          "selector": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Angular custom-element selector, e.g. udx-button."
+          },
+          "name": {
+            "type": "string",
+            "description": "Human/catalog name. Optional aid for matching Magic Patterns react.name."
+          },
+          "react": {
+            "type": "string",
+            "description": "Magic Patterns / React component name this selector maps from (e.g. Button)."
+          },
+          "inputs": {
+            "description": "Allowed input names → allowed values (variants). Object form: { \"variant\": [\"primary\", \"secondary\"], \"size\": [\"sm\", \"md\"] }. A CSV dump may flatten this to inputs + variants columns.",
+            "oneOf": [
+              {
+                "type": "object",
+                "additionalProperties": {
+                  "type": "array",
+                  "items": { "type": ["string", "number", "boolean"] }
+                }
+              },
+              {
+                "type": "array",
+                "items": { "type": "string" }
+              }
+            ]
+          },
+          "variants": {
+            "description": "Optional alias when inputs are listed as names only; variant values live here.",
+            "type": "object",
+            "additionalProperties": {
+              "type": "array",
+              "items": { "type": ["string", "number", "boolean"] }
+            }
+          },
+          "tokens": {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        }
+      }
+    }
+  }
+}

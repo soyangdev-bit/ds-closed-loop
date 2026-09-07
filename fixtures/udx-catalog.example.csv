@@ -1,0 +1,2 @@
+selector,react,inputs,variants,tokens
+udx-button,Button,"variant,size","variant=primary|secondary|ghost;size=sm|md|lg","color.action.primary,space.200,radius.md"

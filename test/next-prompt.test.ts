@@ -4,6 +4,7 @@ import { BANNED_PHRASES, buildNextPrompt } from "../src/next-prompt.js";
 import type { Inventory } from "../src/types.js";
 
 const inventory: Inventory = {
+  designSystem: "udx",
   screenId: "checkout-summary",
   referencePng: "refs/checkout-summary.png",
   frameSize: { w: 1440, h: 900 },
@@ -11,8 +12,9 @@ const inventory: Inventory = {
     {
       id: "btn-pay",
       react: { name: "Button", variant: "primary", size: "md" },
-      angular: { selector: "ds-button", inputs: { variant: "primary", size: "md" } },
+      angular: { selector: "udx-button", inputs: { variant: "primary", size: "md" } },
       required: true,
+      todo: true,
       tokens: ["color.action.primary"],
     },
   ],
@@ -28,7 +30,7 @@ test("next-prompt.md is fail-only checklist and never says match the design", ()
       {
         code: "wrong-component",
         componentId: "btn-pay",
-        detail: "btn-pay: expected <ds-button>, found native <button> (raw-button)",
+        detail: "btn-pay: expected <udx-button>, found native <button> (raw-button)",
       },
       {
         code: "gap-drift",
