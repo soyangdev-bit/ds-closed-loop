@@ -2,7 +2,8 @@
 name: ds-refs-export
 description: >
   Lock a Magic Patterns frame and export the three-part drop package
-  (PNG + inventory JSON + React) into refs/. Use before ds-loop, when
+  (PNG + inventory JSON + React) into refs/. Map React → UDX from a catalog
+  dump; Magic Patterns never fills Angular selectors. Use before ds-loop, when
   capturing a published preview at frameSize, or when filling inventory.json.
 ---
 
@@ -15,7 +16,7 @@ Freeze one screen before any Angular work. The drop package is the only referenc
 ```
 refs/<screenId>/
   <screenId>.png       # part 1 — PNG at exact frameSize
-  inventory.json       # part 2 — frozen field names (see schema)
+  inventory.json       # part 2 — frozen field names (see schema); designSystem: "udx"
   <Screen>.tsx         # part 3 — exported React from Magic Patterns
 ```
 
@@ -54,18 +55,20 @@ Masks (same selectors Gate B uses): `[data-dynamic]`, `[data-ds-mask]`, `[data-m
 
 ## 3. Fill `inventory.json`
 
-Field names are frozen. Copy this shape:
+Field names are frozen. `designSystem` is always `"udx"`. Copy this shape:
 
 ```json
 {
+  "designSystem": "udx",
   "screenId": "checkout-summary",
   "referencePng": "checkout-summary.png",
   "frameSize": { "w": 1440, "h": 900 },
   "components": [{
     "id": "btn-pay",
     "react": { "name": "Button", "variant": "primary", "size": "md" },
-    "angular": { "selector": "ds-button", "inputs": { "variant": "primary", "size": "md" } },
+    "angular": { "selector": "udx-button", "inputs": { "variant": "primary", "size": "md" } },
     "required": true,
+    "todo": true,
     "tokens": ["color.action.primary", "space.200", "radius.md"]
   }],
   "forbidden": ["raw-button", "inline-hex", "inline-px-spacing"],
@@ -77,10 +80,21 @@ Field names are frozen. Copy this shape:
 }
 ```
 
-Rules:
+### Magic Patterns never fills Angular selectors
+
+Each inventory row maps **React → UDX**:
+
+1. From Magic Patterns / the React export, fill `react.name` (and variant/size). Leave `angular.*` empty of MP data.
+2. Load the UDX dump if present (`components.json` or CSV). **One row per component:** `selector`, `inputs`/`variants`, optional `tokens`. Schema: `schemas/udx-catalog.schema.json`. Examples: `fixtures/udx-catalog.example.json`, `fixtures/udx-catalog.example.csv`.
+3. Match `react.name` to a dump row. Copy `selector` + inputs/variants (and tokens when listed) into `angular` / `tokens`. Clear `todo`.
+4. A **partial** dump enables Gate A for the rows it covers. Unmapped rows stay `"todo": true` with a guessed `udx-*` placeholder; Devin guesses.
+5. With **no** dump, every row stays `todo` and Devin guesses. Sample fixtures are in this state (`udx-button` is a placeholder until a real catalog lands).
+
+Gate A still scores `required` rows against the selector in the inventory (placeholder or catalog). Do not change Gate A/B codes, forbidden lists, or region-drift rules when filling mappings.
+
+Other rules:
 
 - `referencePng` is relative to the inventory file (or absolute).
-- `angular.selector` / `angular.inputs` are what Gate A requires in the Angular tree.
 - `layoutChecks.region` must exist on the preview as `[data-region="<region>"]`.
 - `maxDriftPx` defaults to 8 when omitted.
 - `forbidden` and `rubric` codes are the closed-loop vocabulary. Do not invent parallel names.
@@ -89,7 +103,7 @@ JSON Schema: `schemas/inventory.schema.json`.
 
 ## 4. Export React into `refs/`
 
-From Magic Patterns, export the screen's React source into the drop folder (e.g. `CheckoutSummary.tsx`). This is context for Devin — Gate A still scores **Angular** selectors, not the React tree.
+From Magic Patterns, export the screen's React source into the drop folder (e.g. `CheckoutSummary.tsx`). This is context for Devin — Gate A still scores **UDX Angular** selectors, not the React tree.
 
 Do not "clean up" the export to look like the final Angular app. The React file is a frozen artifact.
 

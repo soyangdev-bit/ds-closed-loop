@@ -1,0 +1,15 @@
+{
+  "designSystem": "udx",
+  "components": [
+    {
+      "selector": "udx-button",
+      "name": "Button",
+      "react": "Button",
+      "inputs": {
+        "variant": ["primary", "secondary", "ghost"],
+        "size": ["sm", "md", "lg"]
+      },
+      "tokens": ["color.action.primary", "space.200", "radius.md"]
+    }
+  ]
+}

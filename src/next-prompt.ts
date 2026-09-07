@@ -23,7 +23,7 @@ export function buildNextPrompt(opts: {
     "",
     `Retry ${opts.attempt}/${opts.retriesCap}. Fix ONLY the failed checks below.`,
     "",
-    "Use design-system components, variants, and tokens.",
+    "Use UDX components, variants, and tokens.",
     "Do not treat the reference PNG as a pixel target for the whole frame.",
     "",
   ];
