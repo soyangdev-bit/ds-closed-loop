@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://github.com/soyangdev-bit/ds-closed-loop/schemas/inventory.schema.json",
   "title": "DS closed-loop inventory",
-  "description": "Frozen screen drop. Each components[] row maps a Magic Patterns React component to a UDX Angular selector. Magic Patterns never fills angular.*; those fields come from a UDX catalog dump (CSV or components.json) or stay todo placeholders.",
+  "description": "Frozen screen drop (inventory v2). designSystem is always \"udx\". Each components[] row supports skill-matrix layers: source (React facts), intent (Magic Patterns / data-udx + intentConfidence), angularTarget (catalog-verified selector/inputs; todo until verified), mapping (transforms/evidence). Inventory v1 react/angular aliases remain valid. Magic Patterns never fills angularTarget; those fields come from a UDX catalog dump or stay todo.",
   "type": "object",
   "additionalProperties": true,
   "required": [
@@ -11,8 +11,6 @@
     "referencePng",
     "frameSize",
     "components",
-    "forbidden",
-    "layoutChecks",
     "rubric"
   ],
   "properties": {
@@ -37,29 +35,97 @@
       "items": {
         "type": "object",
         "additionalProperties": true,
-        "required": ["id", "react", "angular", "required", "tokens"],
+        "required": ["id", "required"],
+        "allOf": [
+          {
+            "anyOf": [
+              { "required": ["react"] },
+              { "required": ["source"] }
+            ]
+          },
+          {
+            "anyOf": [
+              { "required": ["angular"] },
+              { "required": ["angularTarget"] }
+            ]
+          }
+        ],
         "properties": {
           "id": { "type": "string", "minLength": 1 },
+          "source": {
+            "type": "object",
+            "additionalProperties": true,
+            "required": ["name"],
+            "description": "React facts from the Magic Patterns export.",
+            "properties": {
+              "name": { "type": "string", "minLength": 1 },
+              "variant": { "type": "string" },
+              "size": { "type": "string" },
+              "tag": { "type": "string" },
+              "file": { "type": "string" },
+              "props": {
+                "type": "object",
+                "additionalProperties": { "type": ["string", "number", "boolean"] }
+              }
+            }
+          },
           "react": {
             "type": "object",
             "additionalProperties": true,
             "required": ["name"],
+            "description": "Inventory v1 alias of source.",
             "properties": {
               "name": { "type": "string", "minLength": 1 },
               "variant": { "type": "string" },
               "size": { "type": "string" }
             }
           },
+          "intent": {
+            "type": "object",
+            "additionalProperties": true,
+            "required": ["intentConfidence"],
+            "description": "From Magic Patterns / data-udx. Devin consumes this; it does not write data-udx.",
+            "properties": {
+              "intentConfidence": {
+                "type": "string",
+                "enum": ["explicit", "inferred", "none"],
+                "description": "explicit = data-udx present; inferred = derived from React; none = no signal."
+              },
+              "dataUdx": { "type": "string" },
+              "component": { "type": "string" },
+              "variant": { "type": "string" },
+              "notes": { "type": "string" }
+            }
+          },
+          "angularTarget": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "UDX mapping verified against the catalog. todo:true until selector/inputs match catalog/udx/components.json (or catalog.path). Never filled by Magic Patterns.",
+            "properties": {
+              "selector": {
+                "type": "string",
+                "description": "UDX Angular selector (e.g. udx-button). Empty/omitted until a catalog row maps this React component."
+              },
+              "inputs": {
+                "type": "object",
+                "additionalProperties": { "type": ["string", "number", "boolean"] }
+              },
+              "todo": {
+                "type": "boolean",
+                "description": "True until selector/inputs are verified against the UDX catalog dump. Gate A fails required rows that are still todo."
+              }
+            }
+          },
           "angular": {
             "type": "object",
             "additionalProperties": true,
             "required": ["selector", "inputs"],
-            "description": "UDX mapping. Filled from the UDX dump (selector + inputs/variants), never from Magic Patterns. Placeholder selectors use the udx-* prefix and the row's todo flag.",
+            "description": "Inventory v1 alias of angularTarget (selector required on this alias).",
             "properties": {
               "selector": {
                 "type": "string",
                 "minLength": 1,
-                "description": "UDX Angular selector (e.g. udx-button). Placeholder until a catalog row maps this React component."
+                "description": "UDX Angular selector (e.g. udx-button)."
               },
               "inputs": {
                 "type": "object",
@@ -67,10 +133,43 @@
               }
             }
           },
+          "mapping": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "Transformations and evidence for source → angularTarget.",
+            "properties": {
+              "transforms": {
+                "type": "array",
+                "items": {
+                  "oneOf": [
+                    { "type": "string" },
+                    { "type": "object" }
+                  ]
+                }
+              },
+              "evidence": {
+                "oneOf": [
+                  {
+                    "type": "array",
+                    "items": {
+                      "oneOf": [
+                        { "type": "string" },
+                        { "type": "object" }
+                      ]
+                    }
+                  },
+                  { "type": "object" }
+                ]
+              },
+              "from": { "type": "string" },
+              "to": { "type": "string" },
+              "notes": { "type": "string" }
+            }
+          },
           "required": { "type": "boolean" },
           "todo": {
             "type": "boolean",
-            "description": "True when angular.selector is a guessed udx-* placeholder, not a row from the UDX catalog dump. Gate A still scores required rows against that selector."
+            "description": "Inventory v1 row flag (placeholder selector). Prefer angularTarget.todo on v2 rows."
           },
           "tokens": {
             "type": "array",
@@ -81,10 +180,12 @@
     },
     "forbidden": {
       "type": "array",
-      "items": { "type": "string" }
+      "items": { "type": "string" },
+      "description": "Default: raw-button, inline-hex, inline-px-spacing."
     },
     "layoutChecks": {
       "type": "array",
+      "description": "Optional. Gate B region-drift checks. maxDriftPx defaults to 8 (not Devin's ~1px internal loop).",
       "items": {
         "type": "object",
         "additionalProperties": true,
@@ -92,6 +193,48 @@
         "properties": {
           "region": { "type": "string", "minLength": 1 },
           "maxDriftPx": { "type": "number", "minimum": 0 }
+        }
+      }
+    },
+    "states": {
+      "type": "array",
+      "description": "Optional interaction/visual states to score (e.g. default, hover, disabled).",
+      "items": {
+        "oneOf": [
+          { "type": "string" },
+          { "type": "object" }
+        ]
+      }
+    },
+    "viewports": {
+      "type": "array",
+      "description": "Optional extra viewports. Harness Gate B still screenshots inventory.frameSize.",
+      "items": {
+        "type": "object",
+        "additionalProperties": true,
+        "required": ["w", "h"],
+        "properties": {
+          "id": { "type": "string" },
+          "name": { "type": "string" },
+          "w": { "type": "integer", "minimum": 1 },
+          "h": { "type": "integer", "minimum": 1 }
+        }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Optional drop-level evidence pointers (react path, png, preview URL, notes)."
+    },
+    "catalog": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "UDX catalog dump location. Default path is catalog/udx/components.json.",
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Path to components.json (JSON or CSV). Default: catalog/udx/components.json. Real dump comes from @udx/lib / udx.dev.bny.net/llms.txt — never invent rows."
         }
       }
     },

@@ -55,7 +55,9 @@ Masks (same selectors Gate B uses): `[data-dynamic]`, `[data-ds-mask]`, `[data-m
 
 ## 3. Fill `inventory.json`
 
-Field names are frozen. `designSystem` is always `"udx"`. Copy this shape:
+Field names are frozen. `designSystem` is always `"udx"`. Prefer inventory **v2** skill-matrix layers (`source`, `intent`, `angularTarget`, `mapping`). v1 `react` / `angular` still validate.
+
+Copy this shape:
 
 ```json
 {
@@ -63,12 +65,14 @@ Field names are frozen. `designSystem` is always `"udx"`. Copy this shape:
   "screenId": "checkout-summary",
   "referencePng": "checkout-summary.png",
   "frameSize": { "w": 1440, "h": 900 },
+  "catalog": { "path": "catalog/udx/components.json" },
   "components": [{
     "id": "btn-pay",
-    "react": { "name": "Button", "variant": "primary", "size": "md" },
-    "angular": { "selector": "udx-button", "inputs": { "variant": "primary", "size": "md" } },
+    "source": { "name": "Button", "variant": "primary", "size": "md" },
+    "intent": { "intentConfidence": "inferred", "component": "Button" },
+    "angularTarget": { "selector": "udx-button", "inputs": { "variant": "primary", "size": "md" }, "todo": true },
+    "mapping": { "transforms": ["Button → udx-button"], "evidence": [] },
     "required": true,
-    "todo": true,
     "tokens": ["color.action.primary", "space.200", "radius.md"]
   }],
   "forbidden": ["raw-button", "inline-hex", "inline-px-spacing"],
@@ -80,26 +84,31 @@ Field names are frozen. `designSystem` is always `"udx"`. Copy this shape:
 }
 ```
 
+Optional top-level: `states`, `viewports`, `layoutChecks`, `evidence`, `catalog.path` (default `catalog/udx/components.json`).
+
+`intent.intentConfidence` is `explicit` when `data-udx` is present, `inferred` from React, or `none`. This pack **consumes** `data-udx`; it does not write it (Magic Patterns writer skill is missing).
+
 ### Magic Patterns never fills Angular selectors
 
 Each inventory row maps **React → UDX**:
 
-1. From Magic Patterns / the React export, fill `react.name` (and variant/size). Leave `angular.*` empty of MP data.
-2. Load the UDX dump if present (`components.json` or CSV). **One row per component:** `selector`, `inputs`/`variants`, optional `tokens`. Schema: `schemas/udx-catalog.schema.json`. Examples: `fixtures/udx-catalog.example.json`, `fixtures/udx-catalog.example.csv`.
-3. Match `react.name` to a dump row. Copy `selector` + inputs/variants (and tokens when listed) into `angular` / `tokens`. Clear `todo`.
-4. A **partial** dump enables Gate A for the rows it covers. Unmapped rows stay `"todo": true` with a guessed `udx-*` placeholder; Devin guesses.
-5. With **no** dump, every row stays `todo` and Devin guesses. Sample fixtures are in this state (`udx-button` is a placeholder until a real catalog lands).
+1. From Magic Patterns / the React export, fill `source` (name, variant, size). Leave `angularTarget` empty of MP data (`todo: true`).
+2. If the prototype has `data-udx`, set `intent.intentConfidence` to `"explicit"` and copy the attribute into `intent.dataUdx`. Otherwise `"inferred"` or `"none"`.
+3. Load the UDX dump if present (`catalog/udx/components.json` or CSV). **One row per component:** `selector`, `inputs`/`variants`, optional `tokens`. Schema: `schemas/udx-catalog.schema.json`. The committed catalog is an **empty stub** — populate from `@udx/lib` or https://udx.dev.bny.net/llms.txt. **Never invent rows.** Shape examples: `fixtures/udx-catalog.example.json`.
+4. Match `source.name` to a dump row. Copy `selector` + inputs/variants (and tokens when listed) into `angularTarget` / `tokens`. Set `todo: false`. Record the transform in `mapping`.
+5. A **partial** dump enables Gate A for the rows it covers. Unmapped rows stay `"angularTarget": { "todo": true }` with a guessed `udx-*` placeholder; Devin guesses. Gate A **fails** required v2 rows that are still `todo` or missing `selector`.
+6. When the catalog file exists **and has rows**, required selector/inputs must be present (`wrong-component` / `missing-variant`).
 
-Gate A still scores `required` rows against the selector in the inventory (placeholder or catalog). Do not change Gate A/B codes, forbidden lists, or region-drift rules when filling mappings.
+Do not change Gate A/B codes, forbidden lists (`raw-button`, `inline-hex`, `inline-px-spacing`), or region-drift rules when filling mappings.
 
 Other rules:
 
 - `referencePng` is relative to the inventory file (or absolute).
 - `layoutChecks.region` must exist on the preview as `[data-region="<region>"]`.
-- `maxDriftPx` defaults to 8 when omitted.
+- `maxDriftPx` defaults to **8** when omitted. Do not use Devin’s ~1px screenshot loop as the harness grade.
 - `forbidden` and `rubric` codes are the closed-loop vocabulary. Do not invent parallel names.
 
-JSON Schema: `schemas/inventory.schema.json`.
+JSON Schema: `schemas/inventory.schema.json`. Example: `fixtures/v2/inventory.json`.
 
 ## 4. Export React into `refs/`
 

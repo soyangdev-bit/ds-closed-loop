@@ -4,6 +4,7 @@ import path from "node:path";
 import { preflight } from "./preflight.js";
 import { runGateA } from "./gate-a.js";
 import { runGateB } from "./gate-b.js";
+import { writeMatrix } from "./matrix.js";
 import {
   buildNextPrompt,
   clearNextPrompt,
@@ -49,7 +50,14 @@ export async function runLoop(opts: LoopOptions): Promise<LoopReport> {
   let attempt = 0;
 
   while (true) {
-    const gateA = await runGateA(inventory, opts.sourceDir);
+    writeMatrix({
+      inventory,
+      inventoryDir: pf.loaded.baseDir,
+      outDir,
+    });
+    const gateA = await runGateA(inventory, opts.sourceDir, {
+      inventoryDir: pf.loaded.baseDir,
+    });
     const gateB: GateResult =
       gateA.passed && opts.preview
         ? await runGateB({

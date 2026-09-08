@@ -43,6 +43,10 @@ export function buildNextPrompt(opts: {
   if (!opts.gateBPassed && b.length > 0) {
     lines.push("## Gate B — region drift");
     lines.push("");
+    lines.push(
+      "Harness grade is layoutChecks.maxDriftPx (default 8). Do not tighten this CI grade to 1px.",
+    );
+    lines.push("");
     for (const finding of b) {
       lines.push(formatItem(finding));
     }
