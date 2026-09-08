@@ -55,7 +55,7 @@ export async function runGateB(opts: GateBOptions): Promise<GateResult> {
       return { name: "B", passed: false, findings };
     }
 
-    for (const check of opts.inventory.layoutChecks) {
+    for (const check of opts.inventory.layoutChecks ?? []) {
       const maxDriftPx = check.maxDriftPx ?? DEFAULT_MAX_DRIFT_PX;
       const locator = session.page.locator(`[${REGION_ATTR}="${check.region}"]`);
       const count = await locator.count();

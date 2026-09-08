@@ -1,0 +1,10 @@
+{
+  "$schema": "../../schemas/udx-catalog.schema.json",
+  "$comment": "STUB ONLY. Populate this dump from @udx/lib or https://udx.dev.bny.net/llms.txt. Never invent selectors, inputs, variants, or tokens. An empty components array means Gate A catalog membership is not yet enabled; once this file has rows, required angularTarget.selector/inputs MUST appear here.",
+  "designSystem": "udx",
+  "source": {
+    "package": "@udx/lib",
+    "llms": "https://udx.dev.bny.net/llms.txt"
+  },
+  "components": []
+}

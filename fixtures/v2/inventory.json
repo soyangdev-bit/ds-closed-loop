@@ -1,0 +1,49 @@
+{
+  "designSystem": "udx",
+  "screenId": "checkout-summary",
+  "referencePng": "../good/refs/checkout-summary.png",
+  "frameSize": { "w": 1440, "h": 900 },
+  "catalog": { "path": "fixtures/udx-catalog.example.json" },
+  "states": ["default"],
+  "viewports": [{ "id": "desktop", "w": 1440, "h": 900 }],
+  "evidence": {
+    "react": "fixtures/good/refs/CheckoutSummary.tsx",
+    "note": "data-udx is consumed when present; this pack does not write it."
+  },
+  "components": [
+    {
+      "id": "btn-pay",
+      "source": {
+        "name": "Button",
+        "variant": "primary",
+        "size": "md",
+        "file": "CheckoutSummary.tsx"
+      },
+      "intent": {
+        "intentConfidence": "inferred",
+        "component": "Button",
+        "variant": "primary",
+        "notes": "No data-udx on the MP export; inferred from React."
+      },
+      "angularTarget": {
+        "selector": "udx-button",
+        "inputs": { "variant": "primary", "size": "md" },
+        "todo": false
+      },
+      "mapping": {
+        "from": "Button",
+        "to": "udx-button",
+        "transforms": ["Button → udx-button", "variant primary → primary", "size md → md"],
+        "evidence": ["fixtures/udx-catalog.example.json#udx-button"]
+      },
+      "required": true,
+      "tokens": ["color.action.primary", "space.200", "radius.md"]
+    }
+  ],
+  "forbidden": ["raw-button", "inline-hex", "inline-px-spacing"],
+  "layoutChecks": [
+    { "region": "header", "maxDriftPx": 8 },
+    { "region": "cta-row", "maxDriftPx": 8 }
+  ],
+  "rubric": ["wrong-component", "missing-variant", "token-drift", "gap-drift"]
+}
