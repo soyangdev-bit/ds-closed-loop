@@ -141,7 +141,7 @@ test("Gate A fails when selector is not in a populated catalog", async () => {
   assert.equal(result.passed, false);
   assert.ok(
     result.findings.some(
-      (f) => f.code === "wrong-component" && /not present in/.test(f.detail),
+      (f) => f.code === "wrong-component" && /not a verified \+ non-null/.test(f.detail),
     ),
     JSON.stringify(result.findings, null, 2),
   );
@@ -187,4 +187,87 @@ test("Gate A fails when inputs are not in a populated catalog", async () => {
     ),
     JSON.stringify(result.findings, null, 2),
   );
+});
+
+test("Gate A fails when inventory points at a source-only / null-selector catalog row", async () => {
+  const dir = mkdtempSync(path.join(os.tmpdir(), "ds-gate-a-"));
+  const invFile = path.join(dir, "inventory.json");
+  writeFileSync(
+    invFile,
+    JSON.stringify({
+      designSystem: "udx",
+      screenId: "source-only",
+      referencePng: "x.png",
+      frameSize: { w: 10, h: 10 },
+      components: [
+        {
+          id: "hk",
+          source: { name: "Hotkeys" },
+          angularTarget: { selector: "hotkeys", inputs: {}, todo: false },
+          required: true,
+        },
+      ],
+      forbidden: ["raw-button", "inline-hex", "inline-px-spacing"],
+      rubric: ["wrong-component", "missing-variant", "token-drift", "gap-drift"],
+    }),
+  );
+  const catalogPath = path.join(dir, "api-inventory.json");
+  writeFileSync(
+    catalogPath,
+    JSON.stringify({
+      source: { package: "@udx/lib", version: "0.0.82" },
+      components: [
+        {
+          selector: "udx-button",
+          status: "verified",
+          inputs: { variant: ["primary"] },
+        },
+        { name: "hotkeys", selector: null, status: "source-only" },
+        { name: "date", selector: null, status: "source-only" },
+        { name: "close-on-scroll", selector: null, status: "source-only" },
+      ],
+    }),
+  );
+  const loaded = loadInventory(invFile);
+  const result = await runGateA(
+    loaded.inventory,
+    path.join(root, "fixtures/good/src"),
+    { catalog: loadCatalog(catalogPath) },
+  );
+  assert.equal(result.passed, false);
+  assert.ok(
+    result.findings.some(
+      (f) => f.code === "wrong-component" && /source-only/.test(f.detail),
+    ),
+    JSON.stringify(result.findings, null, 2),
+  );
+});
+
+test("Gate A accepts verified + non-null selector rows from an apis[] inventory hose", async () => {
+  const loaded = loadInventory(path.join(root, "fixtures/v2/inventory.json"));
+  const dir = mkdtempSync(path.join(os.tmpdir(), "ds-gate-a-"));
+  const catalogPath = path.join(dir, "api-inventory.json");
+  writeFileSync(
+    catalogPath,
+    JSON.stringify({
+      source: { package: "@udx/lib", version: "0.0.82" },
+      apis: [
+        {
+          selector: "udx-button",
+          status: "verified",
+          inputs: {
+            variant: ["primary", "secondary", "ghost"],
+            size: ["sm", "md", "lg"],
+          },
+        },
+        { name: "hotkeys", selector: null, status: "source-only" },
+      ],
+    }),
+  );
+  const result = await runGateA(
+    loaded.inventory,
+    path.join(root, "fixtures/good/src"),
+    { catalog: loadCatalog(catalogPath) },
+  );
+  assert.equal(result.passed, true, JSON.stringify(result.findings, null, 2));
 });

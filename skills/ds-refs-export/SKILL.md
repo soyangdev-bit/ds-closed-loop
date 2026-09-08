@@ -65,7 +65,7 @@ Copy this shape:
   "screenId": "checkout-summary",
   "referencePng": "checkout-summary.png",
   "frameSize": { "w": 1440, "h": 900 },
-  "catalog": { "path": "catalog/udx/components.json" },
+  "catalog": { "path": "catalog/udx/api-inventory.json" },
   "components": [{
     "id": "btn-pay",
     "source": { "name": "Button", "variant": "primary", "size": "md" },
@@ -84,7 +84,7 @@ Copy this shape:
 }
 ```
 
-Optional top-level: `states`, `viewports`, `layoutChecks`, `evidence`, `catalog.path` (default `catalog/udx/components.json`).
+Optional top-level: `states`, `viewports`, `layoutChecks`, `evidence`, `catalog.path` (default `catalog/udx/api-inventory.json`; legacy `catalog/udx/components.json` still works).
 
 `intent.intentConfidence` is `explicit` when `data-udx` is present, `inferred` from React, or `none`. This pack **consumes** `data-udx`; it does not write it (Magic Patterns writer skill is missing).
 
@@ -94,10 +94,10 @@ Each inventory row maps **React → UDX**:
 
 1. From Magic Patterns / the React export, fill `source` (name, variant, size). Leave `angularTarget` empty of MP data (`todo: true`).
 2. If the prototype has `data-udx`, set `intent.intentConfidence` to `"explicit"` and copy the attribute into `intent.dataUdx`. Otherwise `"inferred"` or `"none"`.
-3. Load the UDX dump if present (`catalog/udx/components.json` or CSV). **One row per component:** `selector`, `inputs`/`variants`, optional `tokens`. Schema: `schemas/udx-catalog.schema.json`. The committed catalog is an **empty stub** — populate from `@udx/lib` or https://udx.dev.bny.net/llms.txt. **Never invent rows.** Shape examples: `fixtures/udx-catalog.example.json`.
-4. Match `source.name` to a dump row. Copy `selector` + inputs/variants (and tokens when listed) into `angularTarget` / `tokens`. Set `todo: false`. Record the transform in `mapping`.
+3. Load the UDX dump if present (`catalog/udx/api-inventory.json`; skills historically said `components.json` — still accepted, or CSV / `catalog.path`). **Row shape:** `selector` (string or null), `status` (`verified` | `source-only`), `inputs`/`variants`, optional `tokens`. Schema: `schemas/udx-catalog.schema.json`. The committed catalog is an **empty stub** — paste from `@udx/lib@0.0.82`. **Never invent rows.** Shape examples: `fixtures/udx-catalog.example.json`. Dropping the catalog is not a close; you still need `refs/<screen>/`.
+4. Match `source.name` to a **verified + non-null selector** dump row. Copy `selector` + inputs/variants (and tokens when listed) into `angularTarget` / `tokens`. Set `todo: false`. Record the transform in `mapping`. Do **not** map to `source-only` / `selector: null` APIs (hotkeys, date, close-on-scroll, …).
 5. A **partial** dump enables Gate A for the rows it covers. Unmapped rows stay `"angularTarget": { "todo": true }` with a guessed `udx-*` placeholder; Devin guesses. Gate A **fails** required v2 rows that are still `todo` or missing `selector`.
-6. When the catalog file exists **and has rows**, required selector/inputs must be present (`wrong-component` / `missing-variant`).
+6. When the catalog file exists **and has rows**, required selector/inputs must be present as verified + non-null (`wrong-component` / `missing-variant`).
 
 Do not change Gate A/B codes, forbidden lists (`raw-button`, `inline-hex`, `inline-px-spacing`), or region-drift rules when filling mappings.
 

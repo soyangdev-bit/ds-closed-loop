@@ -1,8 +1,11 @@
 {
+  "$comment": "SHAPE EXAMPLE ONLY — not a live @udx/lib dump. Do not copy these as real UDX APIs.",
   "designSystem": "udx",
+  "source": { "package": "@udx/lib", "version": "0.0.82" },
   "components": [
     {
       "selector": "udx-button",
+      "status": "verified",
       "name": "Button",
       "react": "Button",
       "inputs": {

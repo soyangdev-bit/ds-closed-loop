@@ -66,7 +66,7 @@ const validV2 = {
       },
       mapping: {
         transforms: ["Button → udx-button"],
-        evidence: ["catalog/udx/components.json"],
+        evidence: ["catalog/udx/api-inventory.json"],
       },
       required: true,
       tokens: ["color.action.primary"],
@@ -164,7 +164,20 @@ test("example UDX catalog dump matches the catalog schema", () => {
   assert.equal(validate(dump), true);
 });
 
-test("catalog stub is a valid empty dump", () => {
+test("api-inventory stub is a valid empty dump and is the default catalog path", () => {
+  const schema = JSON.parse(
+    readFileSync(path.join(root, "schemas/udx-catalog.schema.json"), "utf8"),
+  ) as object;
+  const stub = JSON.parse(
+    readFileSync(path.join(root, "catalog/udx/api-inventory.json"), "utf8"),
+  ) as { components: unknown[] };
+  const validate = new Ajv({ allErrors: true, strict: false }).compile(schema);
+  assert.equal(validate(stub), true);
+  assert.equal(stub.components.length, 0);
+  assert.equal(DEFAULT_CATALOG_PATH, "catalog/udx/api-inventory.json");
+});
+
+test("legacy components.json stub remains a valid empty dump", () => {
   const schema = JSON.parse(
     readFileSync(path.join(root, "schemas/udx-catalog.schema.json"), "utf8"),
   ) as object;

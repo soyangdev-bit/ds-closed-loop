@@ -18,7 +18,7 @@ conversion-preflight
 | --- | --- | --- |
 | 1 | `conversion-preflight` | `npm run ds-loop:preflight -- --inventory refs/<screen-id>/inventory.json` |
 | 2 | `conversion-inventory` | `npm run inventory:validate -- --inventory …` and `npm run ds-loop:matrix -- --inventory …` (writes `.ds-loop/matrix/`) |
-| 3 | `udx-api-verify` | `npx ds-loop udx-api-verify -i …` — `angularTarget` vs `catalog/udx/components.json` |
+| 3 | `udx-api-verify` | `npx ds-loop udx-api-verify -i …` — `angularTarget` vs `catalog/udx/api-inventory.json` (verified + non-null selector) |
 | 4 | `angular-implementation` | `npm run ds-loop:run -- --inventory … --source … --preview-url …` |
 | 5 | `behavior-verification` | `npx ds-loop gate-a` (alias `behavior-verification`) |
 | 6 | `screenshot-verification` | `npx ds-loop gate-b` (alias `screenshot-verification`) |
@@ -35,7 +35,7 @@ Each `components[]` row:
 - **angularTarget** — catalog-verified selector/inputs; `todo: true` until verified
 - **mapping** — transforms + evidence
 
-Optional top-level: `states`, `viewports`, `layoutChecks`, `evidence`, `catalog.path` (default `catalog/udx/components.json`).
+Optional top-level: `states`, `viewports`, `layoutChecks`, `evidence`, `catalog.path` (default `catalog/udx/api-inventory.json`; legacy `catalog/udx/components.json` still works).
 
 ## Screenshot grade (do not conflate)
 
@@ -50,7 +50,11 @@ A Magic Patterns skill that **writes** `data-udx` on the prototype is **not** in
 
 ## Catalog
 
-[`catalog/udx/components.json`](../catalog/udx/components.json) is an empty stub. Fill it from `@udx/lib` or https://udx.dev.bny.net/llms.txt. **Never invent** selectors.
+[`catalog/udx/api-inventory.json`](../catalog/udx/api-inventory.json) is the preferred empty stub (Jackson pastes `@udx/lib@0.0.82` here). Skills historically said [`catalog/udx/components.json`](../catalog/udx/components.json); that path is still a fallback. **Never invent** selectors.
+
+Dropping the catalog is not a close — you still need `refs/<screen>/`.
+
+When populated, Gate A only accepts `status: verified` + non-null `selector`. `source-only` / `selector: null` (hotkeys, date, close-on-scroll, …) cannot be `angularTarget`.
 
 ## Setup / export
 

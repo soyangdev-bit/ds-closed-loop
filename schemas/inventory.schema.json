@@ -100,7 +100,7 @@
           "angularTarget": {
             "type": "object",
             "additionalProperties": true,
-            "description": "UDX mapping verified against the catalog. todo:true until selector/inputs match catalog/udx/components.json (or catalog.path). Never filled by Magic Patterns.",
+            "description": "UDX mapping verified against the catalog. todo:true until selector/inputs match catalog/udx/api-inventory.json (legacy catalog/udx/components.json, or catalog.path). Never filled by Magic Patterns. Must be status:verified + non-null selector when the dump is populated.",
             "properties": {
               "selector": {
                 "type": "string",
@@ -229,12 +229,12 @@
     "catalog": {
       "type": "object",
       "additionalProperties": true,
-      "description": "UDX catalog dump location. Default path is catalog/udx/components.json.",
+      "description": "UDX catalog dump location. Default path is catalog/udx/api-inventory.json (@udx/lib@0.0.82). Skills historically used catalog/udx/components.json; that path is still a fallback.",
       "properties": {
         "path": {
           "type": "string",
           "minLength": 1,
-          "description": "Path to components.json (JSON or CSV). Default: catalog/udx/components.json. Real dump comes from @udx/lib / udx.dev.bny.net/llms.txt — never invent rows."
+          "description": "Path to api-inventory.json (JSON or CSV). Default: catalog/udx/api-inventory.json. Legacy: catalog/udx/components.json. Real dump comes from @udx/lib@0.0.82 — never invent rows."
         }
       }
     },

@@ -1,0 +1,11 @@
+{
+  "$schema": "../../schemas/udx-catalog.schema.json",
+  "$comment": "STUB ONLY — Jackson pastes the full @udx/lib@0.0.82 dump here. Do not invent UDX APIs. Preferred catalog hose: catalog/udx/api-inventory.json. Skills historically said catalog/udx/components.json; the harness still loads that file or inventory.catalog.path. Row shape: { selector: string|null, status: \"verified\"|\"source-only\", name?, inputs?, tokens? }. Gate A membership (when this file has rows): only status:verified (or equivalent) AND non-null selector may be angularTarget. selector:null / source-only rows (hotkeys, date, close-on-scroll, …) fail wrong-component if inventory points at them. Required angularTarget.selector missing, todo:true, or not found as verified+non-null → fail. Empty arrays mean membership is off (samples still pass). Dropping this catalog is not a screen close; you still need refs/<screen>/ (PNG + inventory.json + React).",
+  "designSystem": "udx",
+  "source": {
+    "package": "@udx/lib",
+    "version": "0.0.82",
+    "hose": "catalog/udx/api-inventory.json"
+  },
+  "components": []
+}

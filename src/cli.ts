@@ -76,7 +76,7 @@ program
 program
   .command("udx-api-verify")
   .description(
-    "udx-api-verify: check angularTarget selector/inputs against catalog/udx/components.json",
+    "udx-api-verify: check angularTarget selector/inputs against catalog/udx/api-inventory.json (verified + non-null selector)",
   )
   .requiredOption("-i, --inventory <path>", "inventory JSON path")
   .option("--catalog <path>", "override catalog path")
