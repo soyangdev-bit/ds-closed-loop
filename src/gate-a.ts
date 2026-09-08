@@ -18,7 +18,9 @@ import {
 import {
   allowedInputValues,
   catalogHasInputName,
-  findCatalogComponent,
+  findCatalogRow,
+  isEligibleAngularTarget,
+  isSourceOnlyCatalogRow,
   loadCatalog,
   resolveCatalogPath,
   type LoadedCatalog,
@@ -270,8 +272,8 @@ function pushTargetAndCatalogFindings(
   }
 
   // Empty stub (exists but no rows) does not enable membership checks.
-  // Once catalog/udx/components.json is populated from @udx/lib, required
-  // selector/inputs MUST appear in that dump.
+  // Once catalog/udx/api-inventory.json is populated from @udx/lib@0.0.82,
+  // required selector/inputs MUST be verified + non-null in that dump.
   if (!catalog.populated || !catalog.catalog) return;
 
   if (selectorMissing) {
@@ -290,13 +292,16 @@ function pushTargetAndCatalogFindings(
     return;
   }
 
-  const row = findCatalogComponent(catalog.catalog, selector);
-  if (!row) {
+  const row = findCatalogRow(catalog.catalog, selector);
+  if (!row || !isEligibleAngularTarget(row)) {
     if (rubricIncludes(inventory, "wrong-component")) {
+      const sourceOnly = row && isSourceOnlyCatalogRow(row);
       findings.push({
         code: "wrong-component",
         componentId: component.id,
-        detail: `${component.id}: selector <${selector}> is not present in ${catalog.path}`,
+        detail: sourceOnly
+          ? `${component.id}: <${selector}> is source-only / selector:null in ${catalog.path} and cannot be used as angularTarget`
+          : `${component.id}: selector <${selector}> is not a verified + non-null catalog row in ${catalog.path}`,
       });
     }
     return;

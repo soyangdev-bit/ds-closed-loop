@@ -1,10 +1,11 @@
 {
   "$schema": "../../schemas/udx-catalog.schema.json",
-  "$comment": "STUB ONLY. Populate this dump from @udx/lib or https://udx.dev.bny.net/llms.txt. Never invent selectors, inputs, variants, or tokens. An empty components array means Gate A catalog membership is not yet enabled; once this file has rows, required angularTarget.selector/inputs MUST appear here.",
+  "$comment": "LEGACY STUB. Prefer catalog/udx/api-inventory.json (@udx/lib@0.0.82). This path is still loaded when api-inventory.json is missing or inventory.catalog.path points here. Skills historically named this file. Never invent selectors. Empty components = Gate A membership off.",
   "designSystem": "udx",
   "source": {
     "package": "@udx/lib",
-    "llms": "https://udx.dev.bny.net/llms.txt"
+    "version": "0.0.82",
+    "prefer": "catalog/udx/api-inventory.json"
   },
   "components": []
 }

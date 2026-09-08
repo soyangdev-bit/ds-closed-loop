@@ -9,7 +9,9 @@ import {
 } from "./inventory.js";
 import {
   catalogHasInputName,
-  findCatalogComponent,
+  findCatalogRow,
+  isEligibleAngularTarget,
+  isSourceOnlyCatalogRow,
   loadCatalog,
   resolveCatalogPath,
   type LoadedCatalog,
@@ -83,10 +85,13 @@ export function buildMatrix(
     const mapping = componentMapping(row, source, angularTarget);
     const { selector, inputs } = componentAngular(row);
     const catalogRow =
-      dump && selector ? findCatalogComponent(dump, selector) : undefined;
-    const selectorKnown = Boolean(catalogRow);
+      dump && selector ? findCatalogRow(dump, selector) : undefined;
+    const eligible = Boolean(
+      catalogRow && isEligibleAngularTarget(catalogRow),
+    );
+    const selectorKnown = eligible;
     let inputsKnown = selectorKnown;
-    if (catalogRow) {
+    if (catalogRow && eligible) {
       for (const name of Object.keys(inputs ?? {})) {
         if (!catalogHasInputName(catalogRow, name)) {
           inputsKnown = false;
@@ -97,6 +102,9 @@ export function buildMatrix(
     const todo = angularTarget.todo === true || !selector;
     const verified =
       catalog.populated && selectorKnown && inputsKnown && !todo;
+    const sourceOnly = Boolean(
+      catalogRow && isSourceOnlyCatalogRow(catalogRow),
+    );
     return {
       id: row.id,
       required: row.required,
@@ -111,16 +119,18 @@ export function buildMatrix(
         verified,
         todo,
         detail: !catalog.populated
-          ? "Catalog stub is empty; populate from @udx/lib / udx.dev.bny.net/llms.txt — never invent rows."
+          ? "Catalog stub is empty; paste @udx/lib@0.0.82 api-inventory.json — never invent rows. Dropping the catalog is not a close; you still need refs/<screen>/."
           : !selector
             ? "angularTarget.selector is missing"
-            : !selectorKnown
-              ? `selector <${selector}> not in catalog`
-              : !inputsKnown
-                ? "one or more inputs are not in the catalog"
-                : todo
-                  ? "angularTarget.todo is still true"
-                  : undefined,
+            : sourceOnly
+              ? `selector <${selector}> is source-only / selector:null and cannot be angularTarget`
+              : !selectorKnown
+                ? `selector <${selector}> is not a verified + non-null catalog row`
+                : !inputsKnown
+                  ? "one or more inputs are not in the catalog"
+                  : todo
+                    ? "angularTarget.todo is still true"
+                    : undefined,
       },
     };
   });

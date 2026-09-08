@@ -1,64 +1,82 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://github.com/soyangdev-bit/ds-closed-loop/schemas/udx-catalog.schema.json",
-  "title": "UDX catalog dump",
-  "description": "Expected UDX dump format for catalog/udx/components.json. One row per component: selector, inputs/variants, optional tokens. A matching CSV is equivalent. Magic Patterns does not produce this file. Populate from @udx/lib or https://udx.dev.bny.net/llms.txt — never invent rows. The committed stub may have an empty components array (membership checks disabled until populated). A partial dump is enough to verify inventory.angularTarget for mapped rows (Gate A). Unmapped rows stay todo.",
+  "title": "UDX catalog dump (api-inventory.json)",
+  "description": "Jackson’s @udx/lib dump shape. Preferred path: catalog/udx/api-inventory.json (hose from @udx/lib@0.0.82). Skills historically said catalog/udx/components.json; the harness still loads that file (or inventory.catalog.path) as a fallback. Each row is an API: selector may be a string or null. Gate A only accepts status: verified (or equivalent) AND a non-null selector as angularTarget. selector:null / source-only rows (hotkeys, date, close-on-scroll, …) must not be used as angularTarget. Magic Patterns does not produce this file. Never invent rows — paste the dump from @udx/lib. An empty components/apis array disables membership until populated. The loader also accepts a top-level apis (or inventory/items) array.",
   "type": "object",
   "additionalProperties": true,
-  "required": ["designSystem", "components"],
+  "required": ["components"],
   "properties": {
     "designSystem": {
       "type": "string",
-      "const": "udx"
+      "description": "Optional. Loader normalizes to \"udx\"."
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": true,
+      "description": "Provenance, e.g. { \"package\": \"@udx/lib\", \"version\": \"0.0.82\" }."
+    },
+    "package": { "type": "string" },
+    "version": { "type": "string" },
+    "apis": {
+      "type": "array",
+      "description": "Alternate row collection (api-inventory.json). Loader copies a non-empty apis array onto components.",
+      "items": { "$ref": "#/definitions/catalogRow" }
     },
     "components": {
       "type": "array",
-      "items": {
-        "type": "object",
-        "additionalProperties": true,
-        "required": ["selector"],
-        "properties": {
-          "selector": {
-            "type": "string",
-            "minLength": 1,
-            "description": "Angular custom-element selector, e.g. udx-button."
-          },
-          "name": {
-            "type": "string",
-            "description": "Human/catalog name. Optional aid for matching Magic Patterns react.name."
-          },
-          "react": {
-            "type": "string",
-            "description": "Magic Patterns / React component name this selector maps from (e.g. Button)."
-          },
-          "inputs": {
-            "description": "Allowed input names → allowed values (variants). Object form: { \"variant\": [\"primary\", \"secondary\"], \"size\": [\"sm\", \"md\"] }. A CSV dump may flatten this to inputs + variants columns.",
-            "oneOf": [
-              {
-                "type": "object",
-                "additionalProperties": {
-                  "type": "array",
-                  "items": { "type": ["string", "number", "boolean"] }
-                }
-              },
-              {
+      "items": { "$ref": "#/definitions/catalogRow" }
+    }
+  },
+  "definitions": {
+    "catalogRow": {
+      "type": "object",
+      "additionalProperties": true,
+      "properties": {
+        "selector": {
+          "type": ["string", "null"],
+          "description": "Angular custom-element selector (e.g. udx-button). Null on source-only APIs — those rows cannot be angularTarget."
+        },
+        "status": {
+          "type": "string",
+          "description": "verified = eligible angularTarget (with non-null selector). source-only = not an angularTarget. Legacy dumps with a real selector and no status count as verified."
+        },
+        "name": {
+          "type": "string",
+          "description": "Human/catalog/API name. Optional aid for matching Magic Patterns source.name. Also used to reject inventory pointers at source-only APIs (hotkeys, date, close-on-scroll)."
+        },
+        "id": { "type": "string" },
+        "react": {
+          "type": "string",
+          "description": "Magic Patterns / React component name this selector maps from (e.g. Button)."
+        },
+        "inputs": {
+          "description": "Allowed input names → allowed values (variants). Object form: { \"variant\": [\"primary\", \"secondary\"], \"size\": [\"sm\", \"md\"] }. A CSV dump may flatten this to inputs + variants columns.",
+          "oneOf": [
+            {
+              "type": "object",
+              "additionalProperties": {
                 "type": "array",
-                "items": { "type": "string" }
+                "items": { "type": ["string", "number", "boolean"] }
               }
-            ]
-          },
-          "variants": {
-            "description": "Optional alias when inputs are listed as names only; variant values live here.",
-            "type": "object",
-            "additionalProperties": {
+            },
+            {
               "type": "array",
-              "items": { "type": ["string", "number", "boolean"] }
+              "items": { "type": "string" }
             }
-          },
-          "tokens": {
+          ]
+        },
+        "variants": {
+          "description": "Optional alias when inputs are listed as names only; variant values live here.",
+          "type": "object",
+          "additionalProperties": {
             "type": "array",
-            "items": { "type": "string" }
+            "items": { "type": ["string", "number", "boolean"] }
           }
+        },
+        "tokens": {
+          "type": "array",
+          "items": { "type": "string" }
         }
       }
     }

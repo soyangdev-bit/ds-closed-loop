@@ -65,7 +65,7 @@ refs/<screenId>/
 
 Inventory `designSystem` is `"udx"`. Each `components[]` row has skill-matrix layers: **source** (React), **intent** (`data-udx` / inferred), **angularTarget** (catalog selector/inputs, `todo` until verified), **mapping** (transforms/evidence). Magic Patterns never fills `angularTarget`.
 
-Optional top-level: `states`, `viewports`, `layoutChecks`, `evidence`, `catalog.path` (default `catalog/udx/components.json`).
+Optional top-level: `states`, `viewports`, `layoutChecks`, `evidence`, `catalog.path` (default `catalog/udx/api-inventory.json`; legacy `catalog/udx/components.json` still works).
 
 Point `--inventory` at that JSON and `--source` at the Angular tree Devin will edit. Serve the Angular preview (`ng serve` or a static `preview.html`) and pass `--preview-url` or `--preview`.
 
@@ -82,11 +82,12 @@ Mask volatile pixels with `data-dynamic`, `data-ds-mask`, or `data-mask` (Gate B
 
 Gate A scores **required** inventory selectors. Those selectors come from a UDX catalog dump, not from Magic Patterns. **Never invent** rows.
 
-1. Populate `catalog/udx/components.json` from `@udx/lib` or https://udx.dev.bny.net/llms.txt. The committed file is an **empty stub**. Schema: `schemas/udx-catalog.schema.json`.
-2. A **partial** dump is enough: map every React row that has a dump match into `angularTarget` and set `todo: false`. Those rows enable Gate A catalog membership.
-3. Rows with no dump match stay `"angularTarget": { "todo": true }` with a guessed `udx-*` placeholder. **Gate A fails required v2 rows that are still `todo` or missing `selector`.**
-4. When the catalog file exists **and has rows**, required `selector` / `inputs` must appear in it (`wrong-component` / `missing-variant`). An empty stub does not enable membership (so v1 sample fixtures still pass).
-5. Forbidden remains `raw-button`, `inline-hex`, `inline-px-spacing`. Checklist codes remain `wrong-component`, `missing-variant`, `token-drift`.
+1. Paste Jackson’s `@udx/lib@0.0.82` dump into `catalog/udx/api-inventory.json`. Skills historically said `catalog/udx/components.json`; the harness still loads that file or `inventory.catalog.path`. The committed files are **empty stubs**. Schema: `schemas/udx-catalog.schema.json`.
+2. Dropping the catalog is **not** a screen close. You still need `refs/<screen>/` (PNG + inventory.json + React).
+3. A **partial** dump is enough: map every React row that has a **verified + non-null selector** dump match into `angularTarget` and set `todo: false`.
+4. Rows with no dump match stay `"angularTarget": { "todo": true }` with a guessed `udx-*` placeholder. **Gate A fails required v2 rows that are still `todo` or missing `selector`.**
+5. When the catalog file exists **and has rows**, only `status: verified` (or equivalent) **and** non-null `selector` may be `angularTarget`. `selector: null` / `source-only` rows (hotkeys, date, close-on-scroll, …) fail `wrong-component` if inventory points at them. Required selector/inputs must appear as verified + non-null (`wrong-component` / `missing-variant`). An empty stub does not enable membership (so v1 sample fixtures still pass).
+6. Forbidden remains `raw-button`, `inline-hex`, `inline-px-spacing`. Checklist codes remain `wrong-component`, `missing-variant`, `token-drift`.
 
 ## Screenshot grade (Gate B)
 

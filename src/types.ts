@@ -27,7 +27,10 @@ export const DEVIN_SCREENSHOT_INTERNAL_PX = 1;
 
 export const DEFAULT_RETRIES = 3;
 export const DEFAULT_OUT_DIR = ".ds-loop";
-export const DEFAULT_CATALOG_PATH = "catalog/udx/components.json";
+/** Preferred dump from @udx/lib (Jackson’s api-inventory.json hose). */
+export const DEFAULT_CATALOG_PATH = "catalog/udx/api-inventory.json";
+/** Historical skills path; still accepted when the preferred file is missing or catalog.path overrides. */
+export const LEGACY_CATALOG_PATH = "catalog/udx/components.json";
 export const DEFAULT_FORBIDDEN: ForbiddenCode[] = [...FORBIDDEN_CODES];
 
 export const MASK_SELECTORS = [
@@ -90,7 +93,8 @@ export interface IntentLayer {
 
 /**
  * Catalog-backed Angular target. `todo: true` until selector/inputs are
- * verified against `catalog/udx/components.json` (or `catalog.path`).
+ * verified against `catalog/udx/api-inventory.json` (legacy
+ * `catalog/udx/components.json`, or `catalog.path`).
  */
 export interface AngularTargetLayer {
   selector?: string;
@@ -217,8 +221,15 @@ export interface RegionDrift {
 }
 
 export interface UdxCatalogComponent {
-  selector: string;
+  /**
+   * Angular custom-element selector. Null on source-only APIs (hotkeys,
+   * date helpers, close-on-scroll, …) — those rows must not be angularTarget.
+   */
+  selector?: string | null;
+  /** `verified` (eligible) or `source-only` (not an angularTarget). */
+  status?: string;
   name?: string;
+  id?: string;
   react?: string;
   inputs?: Record<string, Array<string | number | boolean>> | string[];
   variants?: Record<string, Array<string | number | boolean>>;

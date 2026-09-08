@@ -6,7 +6,7 @@ Freeze a published Magic Patterns screen (PNG + inventory JSON + React), generat
 
 This is not a pixel-perfect whole-image matcher. Gate B measures **region drift** against `layoutChecks.maxDriftPx` (default **8px**).
 
-Magic Patterns never fills Angular selectors. Each inventory row maps **React → UDX**. A partial UDX dump (`catalog/udx/components.json`) is what enables Gate A catalog checks; without rows in that dump, `angularTarget.todo` stays true.
+Magic Patterns never fills Angular selectors. Each inventory row maps **React → UDX**. The catalog drop is **`catalog/udx/api-inventory.json`** (Jackson’s hose from `@udx/lib@0.0.82`). Skills historically said `catalog/udx/components.json`; the harness still loads that file or `inventory.catalog.path`. An empty stub does not enable Gate A membership. Dropping the catalog is not a screen close — you still need `refs/<screen>/`.
 
 ## Devin skill pack (orchestration)
 
@@ -102,7 +102,7 @@ Mask clocks, avatars, and other volatile pixels with `data-dynamic`, `data-ds-ma
 | `angularTarget` | UDX selector + inputs | Verified against the catalog. `todo: true` until verified |
 | `mapping` | Transforms + evidence | How source became the Angular target |
 
-Optional top-level: `states`, `viewports`, `layoutChecks`, `evidence`, `catalog.path` (default `catalog/udx/components.json`).
+Optional top-level: `states`, `viewports`, `layoutChecks`, `evidence`, `catalog.path` (default `catalog/udx/api-inventory.json`; legacy `catalog/udx/components.json` still works).
 
 Inventory v1 (`react` / `angular` / row-level `todo`) still validates.
 
@@ -112,7 +112,7 @@ Inventory v1 (`react` / `angular` / row-level `todo`) still validates.
   "screenId": "checkout-summary",
   "referencePng": "refs/checkout-summary.png",
   "frameSize": { "w": 1440, "h": 900 },
-  "catalog": { "path": "catalog/udx/components.json" },
+  "catalog": { "path": "catalog/udx/api-inventory.json" },
   "components": [{
     "id": "btn-pay",
     "source": { "name": "Button", "variant": "primary", "size": "md" },
@@ -141,33 +141,50 @@ Do not rename frozen keys. Extra keys are allowed. `designSystem` is always `"ud
 | --- | --- |
 | Magic Patterns export | `source` / `react` (name, variant, size) plus the React `.tsx` |
 | `data-udx` on the MP prototype | `intent` with `intentConfidence: "explicit"` |
-| UDX dump (`catalog/udx/components.json`) | `angularTarget.selector`, `inputs`; clear `todo` after verify |
+| UDX dump (`catalog/udx/api-inventory.json`) | `angularTarget.selector`, `inputs`; clear `todo` after verify |
 | Neither (row not in the dump) | `"angularTarget": { "todo": true }`; Devin guesses |
 
 ### UDX dump format
 
-**Never invent catalog rows.** The real dump comes from `@udx/lib` or [https://udx.dev.bny.net/llms.txt](https://udx.dev.bny.net/llms.txt). This repo ships [`catalog/udx/components.json`](catalog/udx/components.json) as an **empty stub** (`$comment` in the file). Shape examples only: [`fixtures/udx-catalog.example.json`](fixtures/udx-catalog.example.json).
+**Never invent catalog rows.** The real dump is Jackson’s `@udx/lib@0.0.82` **api-inventory** JSON. This repo ships [`catalog/udx/api-inventory.json`](catalog/udx/api-inventory.json) as an **empty stub** (`$comment` in the file). Skills historically named [`catalog/udx/components.json`](catalog/udx/components.json); that path remains a fallback.
 
-One row per component: **selector**, **inputs/variants**, optional **tokens**. JSON or CSV. Schema: [`schemas/udx-catalog.schema.json`](schemas/udx-catalog.schema.json).
+Dropping the catalog is **not** a close. You still need `refs/<screen>/` (PNG + inventory.json + React).
+
+Schema: [`schemas/udx-catalog.schema.json`](schemas/udx-catalog.schema.json). Shape examples only: [`fixtures/udx-catalog.example.json`](fixtures/udx-catalog.example.json).
+
+When the dump **has rows**, Gate A membership is:
+
+- Only `status: verified` (or equivalent) **and** a non-null `selector` may be `angularTarget`.
+- `selector: null` / `source-only` rows (hotkeys, date, close-on-scroll, …) must **not** be used as `angularTarget` (`wrong-component`).
+- Fail if required `angularTarget.selector` is missing, `todo: true`, or not found as verified + non-null.
+
+An empty stub does not enable membership; v1 samples still pass.
 
 ```json
 {
   "designSystem": "udx",
+  "source": { "package": "@udx/lib", "version": "0.0.82" },
   "components": [
     {
       "selector": "udx-button",
+      "status": "verified",
       "react": "Button",
       "inputs": {
         "variant": ["primary", "secondary", "ghost"],
         "size": ["sm", "md", "lg"]
       },
       "tokens": ["color.action.primary", "space.200", "radius.md"]
+    },
+    {
+      "name": "hotkeys",
+      "selector": null,
+      "status": "source-only"
     }
   ]
 }
 ```
 
-Match `source.name` (and variant/size) to a dump row, copy selector + inputs into `angularTarget`, set `todo: false`. An empty stub does not enable membership checks; once the dump has rows, required selector/inputs **must** be present.
+Match `source.name` (and variant/size) to a **verified + non-null** dump row, copy selector + inputs into `angularTarget`, set `todo: false`. Never map to `source-only` / `selector: null` APIs.
 
 ## Gates
 
@@ -185,7 +202,8 @@ Scans `--source` (`.html`, `.ts`, `.scss`, `.css`, …; skips `node_modules` / `
 | `raw-button` (native `<button>`) | `wrong-component` |
 | required `angularTarget.selector` missing | `wrong-component` |
 | required `angularTarget.todo: true` (v2 rows) | `wrong-component` |
-| selector / inputs not in a **populated** `catalog/udx/components.json` | `wrong-component` / `missing-variant` |
+| selector / inputs not a **verified + non-null** row in a populated `catalog/udx/api-inventory.json` | `wrong-component` / `missing-variant` |
+| inventory points at `source-only` / `selector: null` (hotkeys, date, close-on-scroll, …) | `wrong-component` |
 | required selector missing in source | `wrong-component` |
 | required inputs missing on the selector | `missing-variant` |
 | `inline-hex` / `inline-px-spacing` (and unused tokens) | `token-drift` |
@@ -291,7 +309,7 @@ Under `fixtures/`:
 | `fixtures/drift` | Structure OK, header/CTA shifted >8px; Gate B fail | `npm run sample:drift` (exits 1) |
 | `fixtures/v2` | Inventory v2 skill-matrix layers | schema tests |
 
-`udx-button` in the v1 drops is a **placeholder** (`"todo": true`) until a real UDX catalog is dropped. See [`fixtures/README.md`](fixtures/README.md) and [`catalog/udx/README.md`](catalog/udx/README.md).
+`udx-button` in the v1 drops is a **placeholder** (`"todo": true`) until a real UDX catalog is pasted into `catalog/udx/api-inventory.json`. See [`fixtures/README.md`](fixtures/README.md) and [`catalog/udx/README.md`](catalog/udx/README.md).
 
 ```bash
 npm install
